@@ -1,7 +1,7 @@
 from flask import Flask
 from app.extensions import db,migrate,jwt
 from app.controllers.auth.auth_controller import auth
-from app.controllers.users.users_controller import users
+from app.controllers.users.user_controller import users
 
 #application factory function
 def create_app():
