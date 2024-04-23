@@ -52,7 +52,7 @@ def getAllUsers():
 
 
 
-#Get all authors
+#Get all authors endpoint
 @users.get('/authors')
 @jwt_required()
 def getAllAuthors():
