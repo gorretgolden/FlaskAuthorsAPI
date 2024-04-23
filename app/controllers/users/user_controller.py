@@ -107,6 +107,57 @@ def getAllAuthors():
 
 
 #Get a user by id
+@users.get('/user/<int:id>')
+@jwt_required()
+def getUser(id):
+
+    try:
+
+        user = User.query.filter_by(id=id).first()
+
+        books = []
+        companies = []
+
+    
+
+        if  hasattr(user,'books'):
+                books = [ { 'id': book.id, 'title':book.title,'price':book.price,'genre':book.id, "price_unit":book.price_unit,'description':book.description,'publicaation':book.publication_date,'image':book.image,'created_at':book.created_at} for book in user.books]
+          
+          
+        if hasattr(user,'companies'):
+                companies = [{'id':company.id,'name':company.name,'origin':company.origin} for company in user.companies]
+            
+        
+
+
+        return jsonify({
+
+            "message":"User details retrieved successfully",
+
+            "user": {
+                   'id':user.id,
+                'first_name':user.first_name,
+                'last_name':user.last_name,
+                'username':user.get_full_name(),
+                'email':user.email,
+                'contact':user.contact,
+                'type':user.user_type,
+                'biography':user.biography,
+                'created_at':user.created_at,
+                'companies':companies,
+                'books':books
+                 
+            }
+
+        }), HTTP_200_OK
+
+
+
+    except Exception as e:
+        return jsonify({
+            'error':str(e)
+        }),HTTP_500_INTERNAL_SERVER_ERROR
+
 
    
 
