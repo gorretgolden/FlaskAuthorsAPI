@@ -126,7 +126,7 @@ def getUser(id):
           
           
         if hasattr(user,'companies'):
-                companies = [{'id':company.id,'name':company.name,'origin':company.origin} for company in user.companies]
+                companies = [{'id':company.id,'name':company.name,'origin':company.origin,'description':company.description} for company in user.companies]
             
         
 

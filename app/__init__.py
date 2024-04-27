@@ -2,6 +2,7 @@ from flask import Flask
 from app.extensions import db,migrate,jwt
 from app.controllers.auth.auth_controller import auth
 from app.controllers.users.user_controller import users
+from app.controllers.companies.company_controller import companies
 
 #application factory function
 def create_app():
@@ -27,6 +28,7 @@ def create_app():
     #registering blueprints
     app.register_blueprint(auth)
     app.register_blueprint(users)
+    app.register_blueprint(companies)
 
 
     @app.route("/")
