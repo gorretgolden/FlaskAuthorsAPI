@@ -222,3 +222,46 @@ def updateCompanyDetails(id):
         return jsonify({
             'error':str(e)
         }),HTTP_500_INTERNAL_SERVER_ERROR
+
+
+
+#delete a company
+@companies.route('/delete/<int:id>', methods=['DELETE'])
+@jwt_required()
+def deleteCompany(id):
+
+    try:
+       current_user = get_jwt_identity()
+       loggedInUser = User.query.filter_by(id=current_user).first()
+
+       #get company by id
+       company = Company.query.filter_by(id=id).first() 
+
+       if not company:
+           return jsonify({"error":"Company not found"}),HTTP_404_NOT_FOUND
+       
+       elif loggedInUser.user_type!='admin' and company.user_id!=current_user :
+           return jsonify({"error": "You are not authorized to delete this company"}),HTTP_403_FORBIDDEN
+       
+       else:
+           
+
+         
+           #delete associated books
+           for book in company.books:
+             db.session.delete(book)
+              
+           db.session.delete(company)
+           db.session.commit()
+
+       
+
+           return jsonify({
+               'message':"Company deleted successfully " 
+       
+            })
+    except Exception as e:
+        return jsonify({
+            'error':str(e)
+        }),HTTP_500_INTERNAL_SERVER_ERROR
+
