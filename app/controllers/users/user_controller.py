@@ -1,9 +1,9 @@
 from flask import Blueprint,request,jsonify
-from app.status_codes import HTTP_400_BAD_REQUEST,HTTP_409_CONFLICT,HTTP_500_INTERNAL_SERVER_ERROR,HTTP_201_CREATED,HTTP_401_UNAUTHORIZED,HTTP_200_OK 
+from app.status_codes import HTTP_403_FORBIDDEN,HTTP_409_CONFLICT,HTTP_404_NOT_FOUND,HTTP_500_INTERNAL_SERVER_ERROR,HTTP_201_CREATED,HTTP_401_UNAUTHORIZED,HTTP_200_OK 
 import validators
 from app.models.users import User
 from flask_jwt_extended import create_access_token,create_refresh_token,jwt_required,get_jwt_identity
-
+from app.extensions import db,bcrypt
 
 #users blueprint
 users = Blueprint('users', __name__,url_prefix='/api/v1/users')
@@ -104,8 +104,6 @@ def getAllAuthors():
         }),HTTP_500_INTERNAL_SERVER_ERROR
 
 
-
-
 #Get a user by id
 @users.get('/user/<int:id>')
 @jwt_required()
@@ -115,13 +113,16 @@ def getUser(id):
 
         user = User.query.filter_by(id=id).first()
 
+        if not user:
+           return jsonify({"error":"User not found"}),HTTP_404_NOT_FOUND
+
         books = []
         companies = []
 
     
 
         if  hasattr(user,'books'):
-                books = [ { 'id': book.id, 'title':book.title,'price':book.price,'genre':book.id, "price_unit":book.price_unit,'description':book.description,'publicaation':book.publication_date,'image':book.image,'created_at':book.created_at} for book in user.books]
+                books = [ { 'id': book.id, 'title':book.title,'price':book.price,'genre':book.genre, "price_unit":book.price_unit,'description':book.description,'publicaation':book.publication_date,'image':book.image,'created_at':book.created_at} for book in user.books]
           
           
         if hasattr(user,'companies'):
@@ -160,13 +161,3 @@ def getUser(id):
 
 
    
-
-
-
-
-
-
-
-    
-
-
