@@ -285,5 +285,67 @@ def deleteUser(id):
         }),HTTP_500_INTERNAL_SERVER_ERROR
 
 
+#search for an author
+@users.get('/search')
+@jwt_required()
+def searchAuthors():
+
+    try:
+
+        search_query = request.args.get('query','')
+
+        authors = User.query.filter( ((User.first_name.ilike(f"%{search_query}")) | 
+                                       (User.last_name.ilike(f"%{search_query}")))
+                                      & (User.user_type == 'author') ).all()
+        
+        if len(authors) == 0:
+            return jsonify({
+                'message':"No results found"
+            }),HTTP_404_NOT_FOUND
+        else:
+
+
+         authors_data = []
+
+         for author  in authors:
+            author_info ={
+                'id':author.id,
+                'first_name':author.first_name,
+                'last_name':author.last_name,
+                'name':author.get_full_name(),
+                'email':author.email,
+                'contact':author.contact,
+                'biography':author.biography,
+                'created_at':author.created_at,
+                'companies': [],
+                'books':[]
+
+            }
+
+            if  hasattr(author,'books'):
+                author_info['books'] = [ { 'id': book.id, 'title':book.title,'price':book.price,'genre':book.id, "price_unit":book.price_unit,'description':book.description,'publicaation':book.publication_date,'image':book.image,'created_at':book.created_at} for book in author.books]
+          
+          
+            if hasattr(author,'companies'):
+                author_info['companies'] = [{'id':company.id,'name':company.name,'origin':company.origin} for company in author.companies]
+            
+            authors_data.append(author_info)
+
+
+        return jsonify({
+
+            "message":f"Authors with name {search_query} retrieved successfully",
+            "total_search": len(authors_data),
+            "search_results": authors_data
+
+        }), HTTP_200_OK
+
+
+
+    except Exception as e:
+        return jsonify({
+            'error':str(e)
+        }),HTTP_500_INTERNAL_SERVER_ERROR
+
 
     
