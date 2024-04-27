@@ -1,7 +1,8 @@
 from flask import Blueprint,request,jsonify
-from app.status_codes import HTTP_400_BAD_REQUEST,HTTP_404_NOT_FOUND,HTTP_409_CONFLICT,HTTP_500_INTERNAL_SERVER_ERROR,HTTP_201_CREATED,HTTP_401_UNAUTHORIZED,HTTP_200_OK 
+from app.status_codes import HTTP_400_BAD_REQUEST,HTTP_403_FORBIDDEN,HTTP_404_NOT_FOUND,HTTP_409_CONFLICT,HTTP_500_INTERNAL_SERVER_ERROR,HTTP_201_CREATED,HTTP_401_UNAUTHORIZED,HTTP_200_OK 
 import validators
-from app.models.companies import    Company
+from app.models.companies import  Company
+from app.models.users import    User
 from app.extensions import db,bcrypt
 from flask_jwt_extended import create_access_token,create_refresh_token,jwt_required,get_jwt_identity
 
@@ -153,3 +154,71 @@ def getCompany(id):
             'error':str(e)
         }),HTTP_500_INTERNAL_SERVER_ERROR
 
+
+
+#update company details
+@companies.route('/edit/<int:id>',methods=['PUT','PATCH'])
+@jwt_required()
+def updateCompanyDetails(id):
+
+    try:
+       current_user = get_jwt_identity()
+       loggedInUser = User.query.filter_by(id=current_user).first()
+
+       #get company by id
+       company = Company.query.filter_by(id=id).first() 
+
+       if not company:
+           return jsonify({"error":"Company not found"}),HTTP_404_NOT_FOUND
+       
+       elif loggedInUser.user_type!='admin' and company.user_id!=current_user:
+           return jsonify({"error": "You are not authorized to update the company details"}),HTTP_403_FORBIDDEN
+       
+       else:
+            #store request data
+
+            name = request.get_json().get('name',company.name)
+            origin = request.get_json().get('origin',company.origin)
+            description = request.get_json().get('description',company.description)
+           
+            
+            if name != company.name and Company.query.filter_by(name=name).first():
+                return jsonify({
+                    "error":"Contact  already in use"
+                }),HTTP_409_CONFLICT
+            
+            
+
+            company.name = name
+            company.origin = origin
+            company.description = description
+
+            db.session.commit()
+
+
+            return jsonify({
+               'message':name + "'s details have been successfully updated " ,
+               'company':{
+                      'id':company.id,
+                    'name':company.name,
+                    'description':company.description,
+                    'origin':company.origin,
+                   'user':{
+                    'first_name':company.user.first_name,
+                    'last_name':company.user.last_name,
+                    'username':company.user.get_full_name(),
+                    'email':company.user.email,
+                    'contact':company.user.contact,
+                    'type':company.user.user_type,
+                    'biography':company.user.biography,
+                    'created_at':company.user.created_at
+
+                },
+                'created_at':company.created_at
+          
+              }
+            })
+    except Exception as e:
+        return jsonify({
+            'error':str(e)
+        }),HTTP_500_INTERNAL_SERVER_ERROR
