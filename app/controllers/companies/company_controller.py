@@ -55,6 +55,57 @@ def createCompany():
         db.session.rollback() 
         return jsonify({'error':str(e)}),HTTP_500_INTERNAL_SERVER_ERROR
 
+
+#get all companies
+@companies.get('/')
+@jwt_required()
+def getAllCompanies():
+
+    try:
+
+        all_companies = Company.query.all()
+
+        companies_data = []
+
+        for company in all_companies:
+            company_info ={
+                'id':company.id,
+                'name':company.name,
+                'description':company.description,
+                'origin':company.origin,
+                'user':{
+                    'first_name':company.user.first_name,
+                    'last_name':company.user.last_name,
+                    'username':company.user.get_full_name(),
+                    'email':company.user.email,
+                    'contact':company.user.contact,
+                    'type':company.user.user_type,
+                    'biography':company.user.biography,
+                    'created_at':company.user.created_at
+
+                },
+                'created_at':company.created_at
+
+            }
+            companies_data.append(company_info)
+
+
+        return jsonify({
+
+            "message":"All companies retrieved successfully",
+            "total_companies": len(companies_data),
+            "companies": companies_data
+
+        }), HTTP_200_OK
+
+
+
+    except Exception as e:
+        return jsonify({
+            'error':str(e)
+        }),HTTP_500_INTERNAL_SERVER_ERROR
+
+
     
     
 
