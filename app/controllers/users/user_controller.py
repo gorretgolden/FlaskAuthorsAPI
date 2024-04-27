@@ -161,3 +161,85 @@ def getUser(id):
 
 
    
+#Update user details
+
+@users.route('/edit/<int:id>',methods=['PUT','PATCH'])
+@jwt_required()
+def updateUserDetails(id):
+
+    try:
+       current_user = get_jwt_identity()
+       loggedInUser = User.query.filter_by(id=current_user).first()
+
+       #get user by id
+       user = User.query.filter_by(id=id).first() 
+
+       if not user:
+           return jsonify({"error":"User not found"}),HTTP_404_NOT_FOUND
+       
+       elif loggedInUser.user_type!='admin' and user.id!=current_user:
+           return jsonify({"error": "You are not authorized to update the user details"}),HTTP_403_FORBIDDEN
+       
+       else:
+            #store request data
+
+            first_name = request.get_json().get('first_name',user.first_name)
+            last_name = request.get_json().get('last_name',user.last_name)
+            email = request.get_json().get('email',user.email)
+            contact = request.get_json().get('contact',user.contact)
+            biography = request.get_json().get('biography',user.biography)
+            user_type = request.get_json().get('user_type',user.user_type)
+       
+            if "password" in request.json:
+                hashed_password = bcrypt.generate_password_hash(request.json.get('password'))
+                user.password = hashed_password
+
+
+            if email != user.email and User.query.filter_by(email=email).first():
+                return jsonify({
+                    "error":"Email address already in use"
+                }),HTTP_409_CONFLICT
+            
+            if contact != user.contact and User.query.filter_by(contact=contact).first():
+                return jsonify({
+                    "error":"Contact  already in use"
+                }),HTTP_409_CONFLICT
+            
+            
+
+            user.first_name = first_name
+            user.last_name = last_name
+            user.email = email
+            user.contact = contact
+            user.biography  = biography
+            user.user_type = user_type
+
+            db.session.commit()
+
+            #get username   
+            user_name = user.get_full_name()
+
+
+            return jsonify({
+               'message':user_name + "'s details have been successfully updated " ,
+               'user':{
+               'id':user.id,
+                "first_name":user.first_name,
+                "last_name":user.last_name,
+                "email": user.email,
+                "contact": user.contact,
+                "type":user.user_type,
+                'biography':user.biography,
+                'updated_at':user.updated_at,
+              }
+            })
+    except Exception as e:
+        return jsonify({
+            'error':str(e)
+        }),HTTP_500_INTERNAL_SERVER_ERROR
+
+
+
+
+
+    
