@@ -241,5 +241,49 @@ def updateUserDetails(id):
 
 
 
+#delete a user
+@users.route('/delete/<int:id>',methods=['DELETE'])
+@jwt_required()
+def deleteUser(id):
+
+    try:
+       current_user = get_jwt_identity()
+       loggedInUser = User.query.filter_by(id=current_user).first()
+
+       #get user by id
+       user = User.query.filter_by(id=id).first() 
+
+       if not user:
+           return jsonify({"error":"User not found"}),HTTP_404_NOT_FOUND
+       
+       elif loggedInUser.user_type!='admin':
+           return jsonify({"error": "You are not authorized to delete this user"}),HTTP_403_FORBIDDEN
+       
+       else:
+           
+           #delete associated companies
+           for company in user.companies:
+             db.session.delete(company)
+
+           #delete associated books
+           for book in user.books:
+             db.session.delete(book)
+ 
+              
+           db.session.delete(user)
+           db.session.commit()
+
+       
+
+           return jsonify({
+               'message':"User deleted successfully " 
+       
+            })
+    except Exception as e:
+        return jsonify({
+            'error':str(e)
+        }),HTTP_500_INTERNAL_SERVER_ERROR
+
+
 
     
